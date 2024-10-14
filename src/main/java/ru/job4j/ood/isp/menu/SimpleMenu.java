@@ -1,6 +1,7 @@
 package ru.job4j.ood.isp.menu;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SimpleMenu implements Menu {
 
@@ -8,25 +9,70 @@ public class SimpleMenu implements Menu {
 
     @Override
     public boolean add(String parentName, String childName, ActionDelegate actionDelegate) {
-   /*  добавьте реализацию*/
-        return  false;
+        if (Objects.equals(parentName, ROOT)) {
+            if (findItem(childName).isPresent()) {
+                return false;
+            }
+            rootElements.add(new SimpleMenuItem(childName, actionDelegate));
+            return true;
+        } else {
+            Optional<ItemInfo> parent = findItem(parentName);
+            if (parent.isPresent()) {
+                if (findItem(childName).isPresent()) {
+                    return false;
+                }
+                parent.get().menuItem.getChildren().add(new SimpleMenuItem(childName, actionDelegate));
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public Optional<MenuItemInfo> select(String itemName) {
-        /*  добавьте реализацию*/
-        return null;
+        Optional<ItemInfo> item = findItem(itemName);
+        if (item.isPresent()) {
+            MenuItem menuItem = item.get().menuItem;
+            return Optional.of(new MenuItemInfo(menuItem.getName(),
+                    menuItem.getChildren().stream().map(MenuItem::getName).collect(Collectors.toList()),
+                    menuItem.getActionDelegate(),
+                    item.get().number));
+        }
+        return Optional.empty();
     }
 
     @Override
     public Iterator<MenuItemInfo> iterator() {
         /*  добавьте реализацию*/
-        return null;
+        return new Iterator<>() {
+            private final DFSIterator dfsIterator = new DFSIterator();
+
+            @Override
+            public boolean hasNext() {
+                return dfsIterator.hasNext();
+            }
+
+            @Override
+            public MenuItemInfo next() {
+                ItemInfo itemInfo = dfsIterator.next();
+                MenuItem menuItem = itemInfo.menuItem;
+                return new MenuItemInfo(menuItem.getName(),
+                        menuItem.getChildren().stream().map(MenuItem::getName).collect(Collectors.toList()),
+                        menuItem.getActionDelegate(),
+                        itemInfo.number);
+            }
+        };
     }
 
     private Optional<ItemInfo> findItem(String name) {
-        /*  добавьте реализацию*/
-        return null;
+        DFSIterator dfsIterator = new DFSIterator();
+        while (dfsIterator.hasNext()) {
+            ItemInfo itemInfo = dfsIterator.next();
+            if (itemInfo.menuItem.getName().equals(name)) {
+                return Optional.of(itemInfo);
+            }
+        }
+        return Optional.empty();
     }
 
     private static class SimpleMenuItem implements MenuItem {
@@ -58,9 +104,9 @@ public class SimpleMenu implements Menu {
 
     private class DFSIterator implements Iterator<ItemInfo> {
 
-        Deque<MenuItem> stack = new LinkedList<>();
+        private Deque<MenuItem> stack = new LinkedList<>();
 
-        Deque<String> numbers = new LinkedList<>();
+        private Deque<String> numbers = new LinkedList<>();
 
         DFSIterator() {
             int number = 1;
@@ -94,8 +140,8 @@ public class SimpleMenu implements Menu {
 
     private class ItemInfo {
 
-        MenuItem menuItem;
-        String number;
+        private MenuItem menuItem;
+        private String number;
 
         public ItemInfo(MenuItem menuItem, String number) {
             this.menuItem = menuItem;

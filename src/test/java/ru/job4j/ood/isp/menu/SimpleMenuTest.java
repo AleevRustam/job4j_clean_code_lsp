@@ -3,6 +3,7 @@ package ru.job4j.ood.isp.menu;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -29,5 +30,45 @@ public class SimpleMenuTest {
                 "Покормить собаку", List.of(), STUB_ACTION, "2."))
                 .isEqualTo(menu.select("Покормить собаку").get());
         menu.forEach(i -> System.out.println(i.getNumber() + i.getName()));
+    }
+
+    @Test
+    public void whenSelectRootItemThenReturnCorrectInfo() {
+        Menu menu = new SimpleMenu();
+        menu.add(Menu.ROOT, "Сходить в магазин", STUB_ACTION);
+        menu.add(Menu.ROOT, "Покормить собаку", STUB_ACTION);
+
+        Optional<Menu.MenuItemInfo> shopItem = menu.select("Сходить в магазин");
+
+        assertThat(shopItem).isPresent();
+        assertThat(shopItem.get().getName()).isEqualTo("Сходить в магазин");
+        assertThat(shopItem.get().getChildren()).hasSize(0);
+        assertThat(shopItem.get().getNumber()).isEqualTo("1.");
+    }
+
+    @Test
+    public void whenSelectChildItemThenReturnCorrectInfo() {
+        Menu menu = new SimpleMenu();
+        menu.add(Menu.ROOT, "Сходить в магазин", STUB_ACTION);
+        menu.add("Сходить в магазин", "Купить продукты", STUB_ACTION);
+        menu.add("Купить продукты", "Купить хлеб", STUB_ACTION);
+        menu.add("Купить продукты", "Купить молоко", STUB_ACTION);
+
+        Optional<Menu.MenuItemInfo> buyItem = menu.select("Купить продукты");
+
+        assertThat(buyItem).isPresent();
+        assertThat(buyItem.get().getName()).isEqualTo("Купить продукты");
+        assertThat(buyItem.get().getChildren()).hasSize(2);
+        assertThat(buyItem.get().getNumber()).isEqualTo("1.1.");
+    }
+
+    @Test
+    public void whenSelectNonExistentItemThenReturnEmpty() {
+        Menu menu = new SimpleMenu();
+        menu.add(Menu.ROOT, "Сходить в магазин", STUB_ACTION);
+
+        Optional<Menu.MenuItemInfo> nonExistentItem = menu.select("Покрасить забор");
+
+        assertThat(nonExistentItem).isNotPresent();
     }
 }
